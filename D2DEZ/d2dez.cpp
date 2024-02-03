@@ -14,17 +14,23 @@ int main(int argc, char** argv) {
 	D2dContext = nullptr;
 	return 0;
 }
-LRESULT CALLBACK WindowProc(
-	HWND hwnd, // The window handle of the target window.
-	UINT uMsg, // The windows message code for the current message.
-	WPARAM wParam, // A pointer to the wParam data.
-	LPARAM lParam // A pointer to the lParam data.
-) {
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	if (uMsg == WM_SIZE) {
 		D2dContext->wndWidth = LOWORD(lParam);
 		D2dContext->wndHeight = HIWORD(lParam);
 	}
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+BYTE* ReadFileEZ(const wchar_t* fileName) {
+	HANDLE hFile = CreateFile(fileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	DWORD fileSize = GetFileSize(hFile, NULL);
+	BYTE* fileData = new BYTE[fileSize];
+
+	DWORD dwDiscard1;
+	(void)ReadFile(hFile, fileData, fileSize, &dwDiscard1, NULL);
+
+	CloseHandle(hFile);
+	return fileData;
 }
 
 D2DEZContext::D2DEZContext() {
@@ -154,6 +160,10 @@ void D2DEZContext::InitD2D() {
 	);
 
 	pD2D1HwndRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &pD2D1SolidColorBrush);
+
+	BYTE* testBitmapData = ReadFileEZ(L"D:\\Important Data\\Programming Projects CPP\\D2DEZ\\D2DEZ\\Assets\\TestImage.bin");
+	testBitmap = LoadBitmapEZ(testBitmapData);
+	delete[] testBitmapData;
 }
 void D2DEZContext::Run(int nShowCmd) {
 	this->nShowCmd = nShowCmd;
@@ -183,26 +193,56 @@ void D2DEZContext::RenderLoop() {
 		if (nFrameCount >= ProfilerInterval) {
 			LARGE_INTEGER timeNow;
 			QueryPerformanceCounter(&timeNow);
-			long elapsedTicks = timeNow.QuadPart - liLastFrameTime.QuadPart;
-			int TPF = elapsedTicks / ProfilerInterval;
-			long FPS = 10000000 / TPF;
-			cout << "FPS: " << FPS << " TPS: " << TPF << endl;
+			LONGLONG elapsedTicks = timeNow.QuadPart - liLastFrameTime.QuadPart;
+			LONGLONG TPF = elapsedTicks / ProfilerInterval;
+			LONGLONG FPS = 10000000 / TPF;
+			cout << "FPS: " << FPS << " TPF: " << TPF << endl;
 			liLastFrameTime = timeNow;
 			nFrameCount = 0;
 		}
 #endif
 
-		if (bufWidth != wndWidth || bufHeight != wndHeight) {
+		/*if (bufWidth != wndWidth || bufHeight != wndHeight) {
 			bufWidth = wndWidth;
 			bufHeight = wndHeight;
 
 			pD2D1HwndRenderTarget->Resize(D2D1::SizeU(bufWidth, bufHeight));
-		}
+		}*/
 
 		// Clear the background
 		pD2D1HwndRenderTarget->BeginDraw();
 		pD2D1HwndRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::CornflowerBlue));
-		pD2D1HwndRenderTarget->FillRectangle(D2D1::RectF(0, 0, 256 / 2, 144), pD2D1SolidColorBrush);
+		DrawBitmap(testBitmap, 0, 0);
 		pD2D1HwndRenderTarget->EndDraw();
 	}
+}
+void D2DEZContext::DrawBitmap(ID2D1Bitmap* pBitmap, float x, float y) {
+	// Get the dimensions of the bitmap
+	D2D1_SIZE_F size = pBitmap->GetSize();
+	float width = size.width;
+	float height = size.height;
+
+	pD2D1HwndRenderTarget->DrawBitmap(
+		pBitmap,
+		D2D1::RectF(x, y, x + width, y + height),
+		1.0f,
+		D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR,
+		D2D1::RectF(0.0f, 0.0f, width, height)
+	);
+}
+ID2D1Bitmap* D2DEZContext::LoadBitmapEZ(const BYTE* buffer) {
+	UINT32 width = static_cast<UINT32>(reinterpret_cast<const UINT16*>(buffer)[0]);
+	UINT32 height = static_cast<UINT32>(reinterpret_cast<const UINT16*>(buffer)[1]);
+	UINT32 pitch = width * 4; // Also sometimes called stride.
+
+	ID2D1Bitmap* pBitmap;
+	HRESULT sob = pD2D1HwndRenderTarget->CreateBitmap(
+		D2D1::SizeU(width, height),
+		buffer + (sizeof(UINT16) * 2),
+		pitch,
+		D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)),
+		&pBitmap
+	);
+
+	return pBitmap;
 }
