@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -128,10 +128,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="d2dez.h" />
+    <ClInclude Include="Assets\TestImage.h" />
+    <ClInclude Include="GameRenderer.h" />
+    <ClInclude Include="GameWindow.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="d2dez.cpp" />
+    <ClCompile Include="GameRenderer.cpp" />
+    <ClCompile Include="GameWindow.cpp" />
+    <ClCompile Include="Program.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
