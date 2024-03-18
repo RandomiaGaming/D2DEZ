@@ -1,5 +1,0 @@
-﻿  GameRenderer.cpp
-D:\Important Data\Programming Projects CPP\D2DEZ\D2DEZ\GameRenderer.cpp(2,10): warning C4067: unexpected tokens following preprocessor directive - expected a newline
-D:\Important Data\Programming Projects CPP\D2DEZ\D2DEZ\GameRenderer.cpp(80,18): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
-D:\Important Data\Programming Projects CPP\D2DEZ\D2DEZ\GameRenderer.cpp(80,15): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
-  D2DEZ.vcxproj -> D:\Important Data\Programming Projects CPP\D2DEZ\D2DEZ\x64\Debug\D2DEZ.exe

@@ -23,8 +23,6 @@ GameRenderer::GameRenderer(HWND target) {
 	bufferWidth = 256;
 	bufferHeight = 144;
 
-	
-
 	// Init D2D1HwndRenderTarget
 	hr = Factory->CreateHwndRenderTarget(
 		D2D1::RenderTargetProperties(),
