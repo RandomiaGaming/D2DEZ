@@ -1,99 +1,73 @@
-#include "GameRenderer.h"
-#include "Assets/TestImage.h";
+#include "EpsilonEngine.h"
 
-BYTE* ReadFileEZ(const wchar_t* fileName) {
-	HANDLE hFile = CreateFile(fileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	DWORD fileSize = GetFileSize(hFile, NULL);
-	BYTE* fileData = new BYTE[fileSize];
+GameRenderer::GameRenderer(GameWindow* window, UINT32 bufferWidth, UINT32 bufferHeight) {
+	_window = window;
+	_bufferWidth = bufferWidth;
+	_bufferHeight = bufferHeight;
 
-	DWORD dwDiscard1 = 0;
-	(void)ReadFile(hFile, fileData, fileSize, &dwDiscard1, NULL);
+	D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, &_factory);
 
-	CloseHandle(hFile);
-	return fileData;
-}
+	int primaryScreenWidth = GetSystemMetrics(SM_CXSCREEN);
+	int primaryScreenHeight = GetSystemMetrics(SM_CYSCREEN);
 
-GameRenderer::GameRenderer(HWND target) {
-	// Init pD2D1Factory
-	HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, &Factory);
-
-	int primaryScreenWidth = GetSystemMetrics(SM_CXSCREEN); // Get the width of the primary display.
-	int primaryScreenHeight = GetSystemMetrics(SM_CYSCREEN); // Get the height of the primary display.
-
-	bufferWidth = 256;
-	bufferHeight = 144;
-
-	// Init D2D1HwndRenderTarget
-	hr = Factory->CreateHwndRenderTarget(
+	_factory->CreateHwndRenderTarget(
 		D2D1::RenderTargetProperties(),
-		D2D1::HwndRenderTargetProperties(target, D2D1::SizeU(bufferWidth, bufferHeight), D2D1_PRESENT_OPTIONS_IMMEDIATELY),
-		&WindowRenderTarget
+		D2D1::HwndRenderTargetProperties(_window->GetHandle(), D2D1::SizeU(_bufferWidth, _bufferHeight), D2D1_PRESENT_OPTIONS_IMMEDIATELY),
+		&_windowRenderTarget
 	);
-
-	WindowRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::CornflowerBlue), &SolidColorBrush);
-
-	testBitmap = LoadBitmapEZ(&TestImage);
 }
-GameRenderer::~GameRenderer() {
-
+void GameRenderer::BeginDraw() {
+	_windowRenderTarget->BeginDraw();
 }
-void GameRenderer::Run() {
-	while (true) {
-		//Profiler Update
-#ifdef ENABLE_PROFILER
-		frameCount++;
-		if (frameCount >= ProfilerInterval) {
-			LARGE_INTEGER timeNow;
-			QueryPerformanceCounter(&timeNow);
-			LONGLONG elapsedTicks = timeNow.QuadPart - lastFrameTime.QuadPart;
-			LONGLONG TPF = elapsedTicks / ProfilerInterval;
-			LONGLONG FPS = 10000000 / TPF;
-			cout << "FPS: " << FPS << " TPF: " << TPF << endl;
-			lastFrameTime = timeNow;
-			frameCount = 0;
-		}
-#endif
-
-		/*if (bufWidth != wndWidth || bufHeight != wndHeight) {
-			bufWidth = wndWidth;
-			bufHeight = wndHeight;
-
-			pD2D1HwndRenderTarget->Resize(D2D1::SizeU(bufWidth, bufHeight));
-		}*/
-
-		// Clear the background
-		WindowRenderTarget->BeginDraw();
-		WindowRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
-		DrawBitmap(testBitmap, 0, 0);
-		WindowRenderTarget->EndDraw();
-	}
+void GameRenderer::Clear(D2D1_COLOR_F color) {
+	_windowRenderTarget->Clear(color);
 }
-void GameRenderer::DrawBitmap(ID2D1Bitmap* pBitmap, int x, int y) {
-	D2D1_SIZE_F size = pBitmap->GetSize();
+void GameRenderer::DrawBitmap(ID2D1Bitmap* bitmap, INT32 x, INT32 y) {
+	D2D1_SIZE_F size = bitmap->GetSize();
 	float width = size.width;
 	float height = size.height;
 
-	WindowRenderTarget->DrawBitmap(
-		pBitmap,
+	_windowRenderTarget->DrawBitmap(
+		bitmap,
 		D2D1::RectF(x, y, x + width, y + height),
-		1.0f,
+		1,
 		D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR,
-		D2D1::RectF(0.0f, 0.0f, width, height)
+		D2D1::RectF(0, 0, width, height)
 	);
 }
-ID2D1Bitmap* GameRenderer::LoadBitmapEZ(const Asset* asset) {
-	UINT32 width = asset->width;
-	UINT32 height = asset->height;
-	UINT32 pitch = width * 4; // Also sometimes called stride.
+void GameRenderer::DrawBitmap(ID2D1Bitmap* bitmap, INT32 destinationX, INT32 destinationY, INT32 sourceX, INT32 sourceY) {
+	D2D1_SIZE_F size = bitmap->GetSize();
+	float width = size.width;
+	float height = size.height;
 
-	ID2D1Bitmap* pBitmap = nullptr;
-	HRESULT sob = WindowRenderTarget->CreateBitmap(
-		D2D1::SizeU(width, height),
-		asset->buffer,
-		pitch,
-		D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)),
-		&pBitmap
+	_windowRenderTarget->DrawBitmap(
+		bitmap,
+		D2D1::RectF(destinationX, destinationY, destinationX + width, destinationY + height),
+		1.0f,
+		D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR,
+		D2D1::RectF(sourceX, sourceY, sourceX + width, sourceY + height)
 	);
+}
+void GameRenderer::EndDraw() {
+	_windowRenderTarget->EndDraw();
+}
+GameRenderer::~GameRenderer() {
+	_windowRenderTarget->Release();
+	_factory->Release();
 
-	return pBitmap;
+	_windowRenderTarget = nullptr;
+	_factory = nullptr;
+	_window = nullptr;
+	_bufferWidth = 0;
+	_bufferHeight = 0;
+}
+
+GameWindow* GameRenderer::GetWindow() const {
+	return _window;
+}
+UINT32 GameRenderer::GetBufferWidth() const {
+	return _bufferWidth;
+}
+UINT32 GameRenderer::GetBufferHeight() const {
+	return _bufferHeight;
 }

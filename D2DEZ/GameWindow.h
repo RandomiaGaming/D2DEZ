@@ -3,34 +3,31 @@
 // If you launch an EpsilonEngine game from the .exe file this won't happen. Complain to Microsoft about it not me. LOL
 
 #pragma once
-#include <initguid.h> // Required in order for IIDs to compile.
-#include <windows.h> // Standard windows header.
-#include <functional> // Required to declare delegates.
-using namespace std;
-typedef void (*GameWindowCallback)();
+#include "EpsilonEngine.h"
 
 class GameWindow {
 public:
-	GameWindow(const wchar_t* title = nullptr, GameWindowCallback callback = nullptr);
-	void Run(int showCommand = -1);
+	GameWindow(const wchar_t* title = nullptr);
+	void Show(int showCommand = -1);
+	void ProcessMessage(); // Processes one message. If there are none returns instantly. Returns instantly if the window is closed.
+	void ClearMessageQueue(); // Processes all messages in the queue then returns. Returns instantly if the window is closed.
+	void RunMessagePump(); // Processes incoming messages until the window closes.
 	~GameWindow();
-	
-	GameWindowCallback _callback;
+
+	HWND GetHandle() const;
+	const wchar_t* GetTitle() const;
+	BOOL IsShowing() const;
+	BOOL IsDestroyed() const;
+
+private:
 	HWND _handle;
 	const wchar_t* _title;
-	bool _destroyed;
+	UINT32 _state; // 0 = Created, 1 = Showing, 2 = Destroyed
 
-	int _x;
-	int _y;
-	int _width;
-	int _height;
+	static BOOL _doneGlobalInit;
 
-	const wchar_t* const GameWindowClassName = L"GameWindowClass";
-	const wchar_t* const DefaultGameWindowTitle = L"Unnamed Game";
+	static constexpr const wchar_t* DefaultGameWindowTitle = L"Unnamed Game Window";
+	static constexpr const wchar_t* GameWindowClassName = L"GameWindowClass";
 
-	static bool DoneGlobalInit;
-	static HINSTANCE Instance;
-	static HCURSOR ArrowCursor;
-
-	static friend LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 };

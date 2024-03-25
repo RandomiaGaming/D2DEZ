@@ -128,13 +128,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AssetManager.h" />
     <ClInclude Include="Assets\TestImage.h" />
+    <ClInclude Include="EpsilonEngine.h" />
     <ClInclude Include="GameRenderer.h" />
     <ClInclude Include="GameWindow.h" />
+    <ClInclude Include="Profiler.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AssetManager.cpp" />
     <ClCompile Include="GameRenderer.cpp" />
     <ClCompile Include="GameWindow.cpp" />
+    <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="Program.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
